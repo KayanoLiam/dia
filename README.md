@@ -2,8 +2,13 @@
 
 [![CI](https://github.com/KayanoLiam/dia/workflows/CI/badge.svg)](https://github.com/KayanoLiam/dia/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-0.1.0-green.svg)](https://github.com/KayanoLiam/dia/releases)
+[![Zig](https://img.shields.io/badge/zig-0.11.0+-orange.svg)](https://ziglang.org/)
+[![Rust](https://img.shields.io/badge/rust-1.70+-red.svg)](https://www.rust-lang.org/)
 
 **dia** 是一个为 Zig 开发者提供的跨平台后端框架，基于 Rust 的 actix-web 构建，提供类似 Java Spring Boot 的直观 API。解决了 zap 框架在 Windows 平台不可用的问题。
+
+> 🎯 **设计目标**：让 Zig 开发者能够像使用 `std` 库一样轻松地构建跨平台 Web 应用
 
 ## ✨ 特性
 
@@ -12,6 +17,13 @@
 - 🎯 **简单易用** - 为 Zig 开发者设计的直观 API
 - 📦 **模块化设计** - Application、Request、Response、Controller、Middleware
 - 🔧 **零配置** - 开箱即用的后端框架
+- 📚 **std 风格 API** - 像使用 Zig 标准库一样的导入方式
+
+## 📚 文档
+
+- 🚀 **[快速开始](GUIDE.md)** - 完整的用户指南和教程
+- 📝 **[API 参考](API.md)** - 详细的 API 文档和函数说明
+- 📋 **[使用示例](examples/)** - 丰富的示例代码和最佳实践
 
 ## 🚀 快速开始
 
@@ -50,6 +62,7 @@ zig build run-rest
 const std = @import("std");
 const dia = @import("dia");
 
+// 方式 1: 完整导入
 fn hello_handler() callconv(.C) ?*opaque {
     var response = dia.Response.new();
     _ = response.text("Hello, Zig + dia! 🎉") catch return null;
@@ -68,6 +81,22 @@ pub fn main() !void {
     
     try app.run();
 }
+```
+
+### 模块化导入 (std 风格)
+
+```zig
+const dia = @import("dia");
+
+// 像 std 库一样的模块化导入
+const request = dia.request;
+const response = dia.response;
+const controller = dia.controller;
+const middleware = dia.middleware;
+
+// 或者直接导入类型
+const Application = dia.Application;
+const Response = dia.Response;
 ```
 
 ### REST API
@@ -174,35 +203,42 @@ zig build test
 
 ## 📦 在你的项目中使用 dia
 
-### 方法 1: 子模块方式
+### 方法 1: 直接克隆 (推荐)
 
 ```bash
+git clone https://github.com/KayanoLiam/dia.git
+cd dia
+cargo build --release
+zig build run-hello  # 运行 Hello World 示例
+```
+
+### 方法 2: 子模块方式
+
+```bash
+# 在你的项目中添加 dia 作为子模块
 git submodule add https://github.com/KayanoLiam/dia.git vendor/dia
 ```
 
 在你的 `build.zig` 中：
 
 ```zig
-const dia = @import("vendor/dia/build.zig");
+const dia_dep = b.dependency("dia", .{
+    .target = target,
+    .optimize = optimize,
+});
 
-pub fn build(b: *std.Build) void {
-    // ... 你的构建配置
-
-    // 添加 dia 依赖
-    const dia_lib = dia.build(b);
-    your_exe.linkLibrary(dia_lib);
-}
+exe.addModule("dia", dia_dep.module("dia"));
 ```
 
-### 方法 2: 直接克隆
+### 方法 3: Zig 包管理器 (实验性)
 
 ```bash
-git clone https://github.com/KayanoLiam/dia.git
-cd dia
-cargo build --release
+zig fetch --save git+https://github.com/KayanoLiam/dia.git
 ```
 
-然后将生成的库文件链接到你的项目中。
+### 方法 4: 直接下载 Release
+
+从 [GitHub Releases](https://github.com/KayanoLiam/dia/releases) 下载最新版本，解压到你的项目目录。
 
 ## 🤝 贡献
 

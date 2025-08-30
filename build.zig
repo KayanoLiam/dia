@@ -5,7 +5,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     // === Dia Framework Module ===
-    
+
     // Create the dia module for easy import
     const dia_module = b.addModule("dia", .{
         .source_file = .{ .path = "src/dia.zig" },
@@ -13,9 +13,9 @@ pub fn build(b: *std.Build) void {
 
     // Build the Rust dia-core library
     const dia_core_lib = buildRustLibrary(b, target, optimize);
-    
+
     // === Examples ===
-    
+
     // Hello World example
     const hello_world = b.addExecutable(.{
         .name = "hello_world",
@@ -43,7 +43,7 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(rest_api);
 
     // === Run Commands ===
-    
+
     const run_hello = b.addRunArtifact(hello_world);
     const run_rest = b.addRunArtifact(rest_api);
 
@@ -54,15 +54,15 @@ pub fn build(b: *std.Build) void {
     run_rest_step.dependOn(&run_rest.step);
 
     // === Tests ===
-    
+
     const test_step = b.step("test", "Run all tests");
-    
+
     // Rust tests
     const cargo_test = b.addSystemCommand(&[_][]const u8{
         "cargo", "test",
     });
     test_step.dependOn(&cargo_test.step);
-    
+
     // Zig tests
     const zig_tests = b.addTest(.{
         .root_source_file = .{ .path = "src/dia.zig" },
@@ -71,16 +71,16 @@ pub fn build(b: *std.Build) void {
     });
     zig_tests.linkLibrary(dia_core_lib);
     zig_tests.linkLibC();
-    
+
     const run_zig_tests = b.addRunArtifact(zig_tests);
     test_step.dependOn(&run_zig_tests.step);
-    
+
     // === Development Tools ===
-    
+
     // Build only Rust components
     const build_rust_step = b.step("build-rust", "Build only Rust components");
     build_rust_step.dependOn(&dia_core_lib.step);
-    
+
     // Clean build artifacts
     const clean_step = b.step("clean", "Clean build artifacts");
     const clean_rust = b.addSystemCommand(&[_][]const u8{
@@ -96,26 +96,26 @@ fn buildRustLibrary(b: *std.Build, target: std.zig.CrossTarget, optimize: std.bu
     const cargo_build = b.addSystemCommand(&[_][]const u8{
         "cargo", "build", "--profile", build_mode,
     });
-    
+
     // Create a shared library target
     const dia_core_lib = b.addSharedLibrary(.{
         .name = "dia_core",
         .target = target,
         .optimize = optimize,
     });
-    
+
     // Depend on Rust build
     dia_core_lib.step.dependOn(&cargo_build.step);
-    
+
     // Add the Rust library path
     const lib_dir = if (optimize == .Debug) "target/debug" else "target/release";
     dia_core_lib.addLibraryPath(.{ .path = lib_dir });
-    
+
     // Link the Rust library
     dia_core_lib.linkSystemLibrary("dia_core");
-    
+
     // Install the library
     b.installArtifact(dia_core_lib);
-    
+
     return dia_core_lib;
 }
