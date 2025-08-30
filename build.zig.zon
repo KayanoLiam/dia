@@ -1,10 +1,9 @@
 .{
     .name = "dia",
     .version = "0.1.0",
+    .description = "Cross-platform backend framework for Zig, built on Rust actix-web",
     .minimum_zig_version = "0.11.0",
-
     .dependencies = .{},
-
     .paths = .{
         "build.zig",
         "build.zig.zon",
@@ -13,6 +12,8 @@
         "dia-core",
         "dia-macros",
         "Cargo.toml",
+        "Cargo.lock",
         "README.md",
+        "LICENSE",
     },
 }
