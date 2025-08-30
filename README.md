@@ -202,9 +202,213 @@ cargo test
 zig build test
 ```
 
+## 📦 如何在你的项目中引入 dia
+
+### 🎯 快速开始 - 新项目
+
+#### 方法 1: Git 子模块（推荐用于开发）
+
+```bash
+# 1. 创建新项目
+mkdir my_web_app
+cd my_web_app
+zig init-exe
+
+# 2. 添加 dia 作为子模块
+git init
+git submodule add https://github.com/KayanoLiam/dia.git vendor/dia
+
+# 3. 构建 dia 的 Rust 核心
+cd vendor/dia
+cargo build --release
+cd ../..
+```
+
+#### 方法 2: 直接克隆（最简单）
+
+```bash
+# 1. 克隆 dia 项目
+git clone https://github.com/KayanoLiam/dia.git
+cd dia
+
+# 2. 构建核心库
+cargo build --release
+
+# 3. 创建你的项目目录
+mkdir ../my_web_app
+cd ../my_web_app
+zig init-exe
+```
+
+#### 方法 3: Zig 包管理器（实验性）
+
+创建 `build.zig.zon` 文件：
+
+```zig
+.{
+    .name = "my_web_app",
+    .version = "0.1.0",
+    .description = "使用 dia 框架的 Web 应用",
+    .minimum_zig_version = "0.14.1",
+
+    .dependencies = .{
+        .dia = .{
+            .url = "https://github.com/KayanoLiam/dia/archive/refs/tags/v0.1.1.tar.gz",
+            .hash = "1220000000000000000000000000000000000000000000000000000000000000", // 需要实际计算
+        },
+    },
+
+    .paths = .{
+        "build.zig",
+        "build.zig.zon", 
+        "src",
+    },
+}
+```
+
+### 🔧 配置 build.zig
+
+无论使用哪种方法，都需要在你的 `build.zig` 中配置 dia 模块：
+
+```zig
+const std = @import("std");
+
+pub fn build(b: *std.Build) void {
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
+
+    // 配置 dia 模块（根据引入方式选择）
+    const dia_module = b.addModule("dia", .{
+        // 方法1: 子模块方式
+        .root_source_file = b.path("vendor/dia/src/dia.zig"),
+        
+        // 方法2: 同级目录
+        // .root_source_file = b.path("../dia/src/dia.zig"),
+        
+        // 方法3: 包管理器 (自动处理)
+    });
+
+    // 你的主程序
+    const exe = b.addExecutable(.{
+        .name = "my_web_app",
+        .root_source_file = b.path("src/main.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
+    // 添加 dia 模块
+    exe.addModule("dia", dia_module);
+
+    // 链接 dia 核心库（根据引入方式调整路径）
+    const lib_dir = if (optimize == .Debug) 
+        "vendor/dia/target/debug"  // 子模块方式
+        // "../dia/target/debug"    // 同级目录方式
+    else 
+        "vendor/dia/target/release"; // 子模块方式
+        // "../dia/target/release";  // 同级目录方式
+    
+    exe.addLibraryPath(b.path(lib_dir));
+    exe.linkSystemLibrary("dia_core");
+    exe.linkLibC();
+
+    b.installArtifact(exe);
+
+    // 运行命令
+    const run_cmd = b.addRunArtifact(exe);
+    run_cmd.step.dependOn(b.getInstallStep());
+
+    const run_step = b.step("run", "Run the app");
+    run_step.dependOn(&run_cmd.step);
+}
+```
+
+### 🌟 编写你的 main.zig
+
+```zig
+const std = @import("std");
+const dia = @import("dia");
+
+fn homeHandler() callconv(.C) ?*anyopaque {
+    var response = dia.Response.new();
+    _ = response.text("Hello from my web app! 🎉") catch return null;
+    defer response.deinit();
+    
+    std.debug.print("🏠 主页访问\n", .{});
+    return null;
+}
+
+fn apiHandler() callconv(.C) ?*anyopaque {
+    const json_data = 
+        \\{"message": "Hello API", "status": "success", "timestamp": "2024-08-30"}
+    ;
+    
+    var response = dia.Response.new();
+    _ = response.json(json_data) catch return null;
+    defer response.deinit();
+    
+    std.debug.print("📡 API 请求\n", .{});
+    return null;
+}
+
+pub fn main() !void {
+    // 初始化 dia 框架
+    try dia.init();
+    std.debug.print("✅ dia 框架初始化成功\n", .{});
+
+    // 创建应用
+    var app = dia.Application.new();
+    defer app.deinit();
+
+    // 配置服务器
+    _ = try app.host("127.0.0.1");
+    _ = try app.port(3000);
+    
+    // 添加路由
+    _ = try app.get("/", homeHandler);
+    _ = try app.get("/api", apiHandler);
+
+    std.debug.print("🚀 服务器启动在: http://127.0.0.1:3000\n", .{});
+    std.debug.print("🧪 测试: curl http://127.0.0.1:3000/\n", .{});
+    std.debug.print("🧪 API: curl http://127.0.0.1:3000/api\n", .{});
+    
+    // 启动服务器
+    try app.run();
+}
+```
+
+### 🔨 构建和运行
+
+```bash
+# 确保先构建了 Rust 核心库
+cd vendor/dia  # 或 cd ../dia
+cargo build --release
+cd -
+
+# 构建并运行你的应用
+zig build run
+
+# 或者分步骤
+zig build
+./zig-out/bin/my_web_app
+```
+
+### ⚠️ 常见问题
+
+1. **链接错误**：确保 Rust 库已正确构建
+   ```bash
+   cd vendor/dia && cargo build --release
+   ```
+
+2. **路径问题**：检查 `build.zig` 中的路径配置是否正确
+
+3. **版本兼容**：确保使用 Zig 0.14.1 或更高版本
+   ```bash
+   zig version  # 应显示 0.14.1 或更高
+   ```
+
 ## 📦 在你的项目中使用 dia
 
-### 方法 1: 直接克隆 (推荐)
+### 方法 1: 直接克隆 (开发和测试)
 
 ```bash
 git clone https://github.com/KayanoLiam/dia.git
@@ -213,11 +417,16 @@ cargo build --release
 zig build run-hello  # 运行 Hello World 示例
 ```
 
-### 方法 2: 子模块方式
+### 方法 2: 集成到现有项目
+
+在你的项目中添加 dia 作为子模块：
 
 ```bash
 # 在你的项目中添加 dia 作为子模块
 git submodule add https://github.com/KayanoLiam/dia.git vendor/dia
+cd vendor/dia
+cargo build --release
+cd ../..
 ```
 
 在你的 `build.zig` 中：
