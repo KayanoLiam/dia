@@ -1,22 +1,22 @@
 //! dia.response - HTTP Response handling module
-//! 
+//!
 //! This module provides functionality for building HTTP responses,
 //! including setting status codes, headers, and response body.
 
 const std = @import("std");
 
 // FFI function declarations for response handling
-extern "C" fn dia_response_new() ?*opaque;
-extern "C" fn dia_response_text(resp: ?*opaque, text: [*:0]const u8) c_int;
-extern "C" fn dia_response_json(resp: ?*opaque, json_str: [*:0]const u8) c_int;
-extern "C" fn dia_response_status(resp: ?*opaque, status: u16) c_int;
-extern "C" fn dia_response_header(resp: ?*opaque, name: [*:0]const u8, value: [*:0]const u8) c_int;
-extern "C" fn dia_response_cookie(resp: ?*opaque, name: [*:0]const u8, value: [*:0]const u8) c_int;
-extern "C" fn dia_response_free(resp: ?*opaque) void;
+extern "C" fn dia_response_new() ?*anyopaque;
+extern "C" fn dia_response_text(resp: ?*anyopaque, text: [*:0]const u8) c_int;
+extern "C" fn dia_response_json(resp: ?*anyopaque, json_str: [*:0]const u8) c_int;
+extern "C" fn dia_response_status(resp: ?*anyopaque, status: u16) c_int;
+extern "C" fn dia_response_header(resp: ?*anyopaque, name: [*:0]const u8, value: [*:0]const u8) c_int;
+extern "C" fn dia_response_cookie(resp: ?*anyopaque, name: [*:0]const u8, value: [*:0]const u8) c_int;
+extern "C" fn dia_response_free(resp: ?*anyopaque) void;
 
 /// HTTP Response builder
 pub const Response = struct {
-    ptr: ?*opaque,
+    ptr: ?*anyopaque,
 
     const Self = @This();
 
@@ -32,10 +32,10 @@ pub const Response = struct {
         var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
         defer arena.deinit();
         const allocator = arena.allocator();
-        
+
         const c_str = try allocator.dupeZ(u8, content);
         const result = dia_response_text(self.ptr, c_str.ptr);
-        
+
         if (result != 0) {
             return error.ResponseTextFailed;
         }
@@ -47,10 +47,10 @@ pub const Response = struct {
         var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
         defer arena.deinit();
         const allocator = arena.allocator();
-        
+
         const c_str = try allocator.dupeZ(u8, json_content);
         const result = dia_response_json(self.ptr, c_str.ptr);
-        
+
         if (result != 0) {
             return error.ResponseJsonFailed;
         }
@@ -61,7 +61,7 @@ pub const Response = struct {
     pub fn jsonStruct(self: *Self, data: anytype, allocator: std.mem.Allocator) !*Self {
         const json_string = try std.json.stringifyAlloc(allocator, data, .{});
         defer allocator.free(json_string);
-        
+
         return self.json(json_string);
     }
 
@@ -79,11 +79,11 @@ pub const Response = struct {
         var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
         defer arena.deinit();
         const allocator = arena.allocator();
-        
+
         const c_name = try allocator.dupeZ(u8, name);
         const c_value = try allocator.dupeZ(u8, value);
         const result = dia_response_header(self.ptr, c_name.ptr, c_value.ptr);
-        
+
         if (result != 0) {
             return error.ResponseHeaderFailed;
         }
@@ -95,11 +95,11 @@ pub const Response = struct {
         var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
         defer arena.deinit();
         const allocator = arena.allocator();
-        
+
         const c_name = try allocator.dupeZ(u8, name);
         const c_value = try allocator.dupeZ(u8, value);
         const result = dia_response_cookie(self.ptr, c_name.ptr, c_value.ptr);
-        
+
         if (result != 0) {
             return error.ResponseCookieFailed;
         }

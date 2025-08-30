@@ -1,22 +1,22 @@
 //! dia.request - HTTP Request handling module
-//! 
+//!
 //! This module provides functionality for handling HTTP requests,
 //! including parsing headers, query parameters, and request body.
 
 const std = @import("std");
 
 // FFI function declarations for request handling
-extern "C" fn dia_request_new() ?*opaque;
-extern "C" fn dia_request_get_method(req: ?*opaque) [*:0]const u8;
-extern "C" fn dia_request_get_path(req: ?*opaque) [*:0]const u8;
-extern "C" fn dia_request_get_header(req: ?*opaque, name: [*:0]const u8) [*:0]const u8;
-extern "C" fn dia_request_get_query(req: ?*opaque, key: [*:0]const u8) [*:0]const u8;
-extern "C" fn dia_request_get_body(req: ?*opaque) [*:0]const u8;
-extern "C" fn dia_request_free(req: ?*opaque) void;
+extern "C" fn dia_request_new() ?*anyopaque;
+extern "C" fn dia_request_get_method(req: ?*anyopaque) [*:0]const u8;
+extern "C" fn dia_request_get_path(req: ?*anyopaque) [*:0]const u8;
+extern "C" fn dia_request_get_header(req: ?*anyopaque, name: [*:0]const u8) [*:0]const u8;
+extern "C" fn dia_request_get_query(req: ?*anyopaque, key: [*:0]const u8) [*:0]const u8;
+extern "C" fn dia_request_get_body(req: ?*anyopaque) [*:0]const u8;
+extern "C" fn dia_request_free(req: ?*anyopaque) void;
 
 /// HTTP Request representation
 pub const Request = struct {
-    ptr: ?*opaque,
+    ptr: ?*anyopaque,
 
     const Self = @This();
 
@@ -44,10 +44,10 @@ pub const Request = struct {
         var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
         defer arena.deinit();
         const allocator = arena.allocator();
-        
+
         const c_name = try allocator.dupeZ(u8, name);
         const c_value = dia_request_get_header(self.ptr, c_name.ptr);
-        
+
         return std.mem.span(c_value);
     }
 
@@ -56,10 +56,10 @@ pub const Request = struct {
         var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
         defer arena.deinit();
         const allocator = arena.allocator();
-        
+
         const c_key = try allocator.dupeZ(u8, key);
         const c_value = dia_request_get_query(self.ptr, c_key.ptr);
-        
+
         if (c_value == null) return null;
         return std.mem.span(c_value);
     }
@@ -86,6 +86,6 @@ pub const Request = struct {
 };
 
 /// Convenience function to create a request from context
-pub fn from_context(ctx: ?*opaque) Request {
+pub fn from_context(ctx: ?*anyopaque) Request {
     return Request{ .ptr = ctx };
 }

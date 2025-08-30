@@ -8,7 +8,7 @@ pub fn build(b: *std.Build) void {
 
     // Create the dia module for easy import
     const dia_module = b.addModule("dia", .{
-        .source_file = .{ .path = "src/dia.zig" },
+        .root_source_file = b.path("src/dia.zig"),
     });
 
     // Build the Rust dia-core library
@@ -19,7 +19,7 @@ pub fn build(b: *std.Build) void {
     // Hello World example
     const hello_world = b.addExecutable(.{
         .name = "hello_world",
-        .root_source_file = .{ .path = "examples/hello_world.zig" },
+        .root_source_file = b.path("examples/hello_world.zig"),
         .target = target,
         .optimize = optimize,
     });
@@ -30,7 +30,7 @@ pub fn build(b: *std.Build) void {
     // REST API example
     const rest_api = b.addExecutable(.{
         .name = "rest_api",
-        .root_source_file = .{ .path = "examples/rest_api.zig" },
+        .root_source_file = b.path("examples/rest_api.zig"),
         .target = target,
         .optimize = optimize,
     });
@@ -65,7 +65,7 @@ pub fn build(b: *std.Build) void {
 
     // Zig tests
     const zig_tests = b.addTest(.{
-        .root_source_file = .{ .path = "src/dia.zig" },
+        .root_source_file = b.path("src/dia.zig"),
         .target = target,
         .optimize = optimize,
     });
@@ -109,7 +109,7 @@ fn buildRustLibrary(b: *std.Build, target: std.zig.CrossTarget, optimize: std.bu
 
     // Add the Rust library path
     const lib_dir = if (optimize == .Debug) "target/debug" else "target/release";
-    dia_core_lib.addLibraryPath(.{ .path = lib_dir });
+    dia_core_lib.addLibraryPath(b.path(lib_dir));
 
     // Link the Rust library
     dia_core_lib.linkSystemLibrary("dia_core");

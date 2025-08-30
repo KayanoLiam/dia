@@ -1,5 +1,5 @@
 //! dia.controller - Controller and routing module
-//! 
+//!
 //! This module provides functionality for defining routes, controllers,
 //! and handling HTTP endpoints with type-safe handlers.
 
@@ -8,19 +8,19 @@ const Request = @import("request.zig").Request;
 const Response = @import("response.zig").Response;
 
 // FFI function declarations for controller handling
-extern "C" fn dia_controller_new() ?*opaque;
-extern "C" fn dia_controller_get(ctrl: ?*opaque, path: [*:0]const u8, handler: HandlerFn) c_int;
-extern "C" fn dia_controller_post(ctrl: ?*opaque, path: [*:0]const u8, handler: HandlerFn) c_int;
-extern "C" fn dia_controller_put(ctrl: ?*opaque, path: [*:0]const u8, handler: HandlerFn) c_int;
-extern "C" fn dia_controller_delete(ctrl: ?*opaque, path: [*:0]const u8, handler: HandlerFn) c_int;
-extern "C" fn dia_controller_middleware(ctrl: ?*opaque, middleware: MiddlewareFn) c_int;
-extern "C" fn dia_controller_free(ctrl: ?*opaque) void;
+extern "C" fn dia_controller_new() ?*anyopaque;
+extern "C" fn dia_controller_get(ctrl: ?*anyopaque, path: [*:0]const u8, handler: HandlerFn) c_int;
+extern "C" fn dia_controller_post(ctrl: ?*anyopaque, path: [*:0]const u8, handler: HandlerFn) c_int;
+extern "C" fn dia_controller_put(ctrl: ?*anyopaque, path: [*:0]const u8, handler: HandlerFn) c_int;
+extern "C" fn dia_controller_delete(ctrl: ?*anyopaque, path: [*:0]const u8, handler: HandlerFn) c_int;
+extern "C" fn dia_controller_middleware(ctrl: ?*anyopaque, middleware: MiddlewareFn) c_int;
+extern "C" fn dia_controller_free(ctrl: ?*anyopaque) void;
 
 /// Handler function type
-pub const HandlerFn = *const fn() callconv(.C) ?*opaque;
+pub const HandlerFn = *const fn () callconv(.C) ?*anyopaque;
 
 /// Middleware function type
-pub const MiddlewareFn = *const fn() callconv(.C) c_int;
+pub const MiddlewareFn = *const fn () callconv(.C) c_int;
 
 /// Route context that handlers receive
 pub const RouteContext = struct {
@@ -52,7 +52,7 @@ pub const RouteContext = struct {
 
 /// Controller for grouping related routes
 pub const Controller = struct {
-    ptr: ?*opaque,
+    ptr: ?*anyopaque,
     base_path: []const u8,
 
     const Self = @This();
@@ -78,10 +78,10 @@ pub const Controller = struct {
         var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
         defer arena.deinit();
         const allocator = arena.allocator();
-        
+
         const full_path = try std.fmt.allocPrintZ(allocator, "{s}{s}", .{ self.base_path, path });
         const result = dia_controller_get(self.ptr, full_path.ptr, handler);
-        
+
         if (result != 0) {
             return error.RouteAddFailed;
         }
@@ -93,10 +93,10 @@ pub const Controller = struct {
         var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
         defer arena.deinit();
         const allocator = arena.allocator();
-        
+
         const full_path = try std.fmt.allocPrintZ(allocator, "{s}{s}", .{ self.base_path, path });
         const result = dia_controller_post(self.ptr, full_path.ptr, handler);
-        
+
         if (result != 0) {
             return error.RouteAddFailed;
         }
@@ -108,10 +108,10 @@ pub const Controller = struct {
         var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
         defer arena.deinit();
         const allocator = arena.allocator();
-        
+
         const full_path = try std.fmt.allocPrintZ(allocator, "{s}{s}", .{ self.base_path, path });
         const result = dia_controller_put(self.ptr, full_path.ptr, handler);
-        
+
         if (result != 0) {
             return error.RouteAddFailed;
         }
@@ -123,10 +123,10 @@ pub const Controller = struct {
         var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
         defer arena.deinit();
         const allocator = arena.allocator();
-        
+
         const full_path = try std.fmt.allocPrintZ(allocator, "{s}{s}", .{ self.base_path, path });
         const result = dia_controller_delete(self.ptr, full_path.ptr, handler);
-        
+
         if (result != 0) {
             return error.RouteAddFailed;
         }

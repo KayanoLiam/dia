@@ -1,13 +1,13 @@
 //! dia - A cross-platform backend framework for Zig
-//! 
+//!
 //! This library provides a high-level, easy-to-use interface for building
 //! web applications in Zig, powered by Rust and actix-web under the hood.
-//! 
+//!
 //! ## Usage
-//! 
+//!
 //! ```zig
 //! const dia = @import("dia");
-//! 
+//!
 //! // Or import specific modules
 //! const request = @import("dia").request;
 //! const response = @import("dia").response;
@@ -38,14 +38,14 @@ extern "C" fn dia_version() [*:0]const u8;
 extern "C" fn dia_free_string(s: [*]u8) void;
 
 // Application FFI functions
-extern "C" fn dia_application_new() ?*opaque;
-extern "C" fn dia_application_host(app: ?*opaque, host: [*:0]const u8) c_int;
-extern "C" fn dia_application_port(app: ?*opaque, port: u16) c_int;
-extern "C" fn dia_application_run(app: ?*opaque) c_int;
-extern "C" fn dia_application_free(app: ?*opaque) void;
-extern "C" fn dia_application_get(app: ?*opaque, path: [*:0]const u8, handler: *const fn() callconv(.C) ?*opaque) c_int;
-extern "C" fn dia_application_post(app: ?*opaque, path: [*:0]const u8, handler: *const fn() callconv(.C) ?*opaque) c_int;
-extern "C" fn dia_application_controller(app: ?*opaque, controller: ?*opaque) c_int;
+extern "C" fn dia_application_new() ?*anyopaque;
+extern "C" fn dia_application_host(app: ?*anyopaque, host: [*:0]const u8) c_int;
+extern "C" fn dia_application_port(app: ?*anyopaque, port: u16) c_int;
+extern "C" fn dia_application_run(app: ?*anyopaque) c_int;
+extern "C" fn dia_application_free(app: ?*anyopaque) void;
+extern "C" fn dia_application_get(app: ?*anyopaque, path: [*:0]const u8, handler: *const fn () callconv(.C) ?*anyopaque) c_int;
+extern "C" fn dia_application_post(app: ?*anyopaque, path: [*:0]const u8, handler: *const fn () callconv(.C) ?*anyopaque) c_int;
+extern "C" fn dia_application_controller(app: ?*anyopaque, controller: ?*anyopaque) c_int;
 
 /// Initialize the dia framework
 /// This must be called before using any other dia functions
@@ -62,13 +62,9 @@ pub fn version() []const u8 {
     return std.mem.span(c_str);
 }
 
-
-
-
-
 /// Application builder for creating web servers
 pub const Application = struct {
-    ptr: ?*opaque,
+    ptr: ?*anyopaque,
     host_str: ?[]const u8 = null,
     port_num: u16 = 8080,
 
@@ -85,15 +81,15 @@ pub const Application = struct {
     pub fn host(self: *Self, host_addr: []const u8) !*Self {
         // Store the host string for later use
         self.host_str = host_addr;
-        
+
         // Convert to C string and call FFI
         var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
         defer arena.deinit();
         const allocator = arena.allocator();
-        
+
         const c_str = try allocator.dupeZ(u8, host_addr);
         const result = dia_application_host(self.ptr, c_str.ptr);
-        
+
         if (result != 0) {
             return error.HostSetFailed;
         }
@@ -115,10 +111,10 @@ pub const Application = struct {
         var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
         defer arena.deinit();
         const allocator = arena.allocator();
-        
+
         const c_str = try allocator.dupeZ(u8, path);
         const result = dia_application_get(self.ptr, c_str.ptr, handler);
-        
+
         if (result != 0) {
             return error.RouteAddFailed;
         }
@@ -130,10 +126,10 @@ pub const Application = struct {
         var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
         defer arena.deinit();
         const allocator = arena.allocator();
-        
+
         const c_str = try allocator.dupeZ(u8, path);
         const result = dia_application_post(self.ptr, c_str.ptr, handler);
-        
+
         if (result != 0) {
             return error.RouteAddFailed;
         }
@@ -152,7 +148,7 @@ pub const Application = struct {
     /// Run the application server
     pub fn run(self: *Self) !void {
         print("🚀 Starting dia server on {}:{}...\n", .{ self.host_str orelse "127.0.0.1", self.port_num });
-        
+
         const result = dia_application_run(self.ptr);
         if (result != 0) {
             return error.ServerRunFailed;
