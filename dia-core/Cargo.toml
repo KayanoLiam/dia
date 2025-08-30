@@ -1,0 +1,53 @@
+[package]
+name = "dia-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Core library for dia - a cross-platform backend framework for Zig"
+keywords.workspace = true
+categories.workspace = true
+
+[lib]
+name = "dia_core"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# Web framework
+actix-web.workspace = true
+actix-rt.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+
+# Async runtime
+tokio.workspace = true
+futures.workspace = true
+
+# Logging
+log.workspace = true
+env_logger.workspace = true
+
+# Error handling
+anyhow.workspace = true
+thiserror.workspace = true
+
+# FFI support
+libc.workspace = true
+
+# URL encoding support
+urlencoding = "2.1"
+
+# Macros
+dia-macros = { path = "../dia-macros" }
+
+[features]
+default = ["json", "logging"]
+json = []
+logging = []
+
+[[example]]
+name = "simple_server"
+path = "../examples/simple_server.rs"
