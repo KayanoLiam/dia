@@ -2,8 +2,8 @@
 
 [![CI](https://github.com/KayanoLiam/dia/workflows/CI/badge.svg)](https://github.com/KayanoLiam/dia/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.1.0-green.svg)](https://github.com/KayanoLiam/dia/releases)
-[![Zig](https://img.shields.io/badge/zig-0.11.0+-orange.svg)](https://ziglang.org/)
+[![Version](https://img.shields.io/badge/version-0.1.1-green.svg)](https://github.com/KayanoLiam/dia/releases)
+[![Zig](https://img.shields.io/badge/zig-0.14.1+-orange.svg)](https://ziglang.org/)
 [![Rust](https://img.shields.io/badge/rust-1.70+-red.svg)](https://www.rust-lang.org/)
 
 **dia** 是一个为 Zig 开发者提供的跨平台后端框架，基于 Rust 的 actix-web 构建，提供类似 Java Spring Boot 的直观 API。解决了 zap 框架在 Windows 平台不可用的问题。
@@ -18,6 +18,7 @@
 - 📦 **模块化设计** - Application、Request、Response、Controller、Middleware
 - 🔧 **零配置** - 开箱即用的后端框架
 - 📚 **std 风格 API** - 像使用 Zig 标准库一样的导入方式
+- 🚀 **Zig 0.14.1 支持** - 完全兼容最新 Zig 版本，享受最新特性
 
 ## 📚 文档
 
@@ -63,7 +64,7 @@ const std = @import("std");
 const dia = @import("dia");
 
 // 方式 1: 完整导入
-fn hello_handler() callconv(.C) ?*opaque {
+fn hello_handler() callconv(.C) ?*anyopaque {
     var response = dia.Response.new();
     _ = response.text("Hello, Zig + dia! 🎉") catch return null;
     return null;
@@ -105,7 +106,7 @@ const Response = dia.Response;
 const std = @import("std");
 const dia = @import("dia");
 
-fn get_users_handler() callconv(.C) ?*opaque {
+fn get_users_handler() callconv(.C) ?*anyopaque {
     const users_json = 
         \\{
         \\  "users": [
@@ -266,6 +267,40 @@ zig fetch --save git+https://github.com/KayanoLiam/dia.git
 
 - 创建 [Issue](https://github.com/KayanoLiam/dia/issues)
 - 发起 [Discussion](https://github.com/KayanoLiam/dia/discussions)
+
+## 🔄 版本更新说明
+
+### v0.1.1 (2024-08-30) - Zig 0.14.1 支持
+
+🎆 **重大更新**：完全支持 Zig 0.14.1！
+
+✨ **新增特性**：
+- ✅ 完全兼容 Zig 0.14.1 最新版本
+- ✅ 向后兼容，无破坏性变更
+- ✅ 性能优化和类型安全改进
+
+🔧 **技术改进**：
+- FFI 类型声明现代化 (`?*opaque` → `?*anyopaque`)
+- 构建系统兼容性提升
+- 语法结构标准化
+- 编译错误全面修复
+
+🔙 **升级指南**：
+如果你正在使用旧版本，只需更新到最新代码即可。你的现有代码无需修改！
+
+```bash
+git pull origin main
+cargo build --release
+zig build
+```
+
+### v0.1.0 (2024-08-30) - 初始发布
+
+✨ **核心特性**：
+- 🎉 首个稳定版本发布
+- 🌍 跨平台支持 (Windows/macOS/Linux)
+- 📚 std 风格的 API 设计
+- 🚀 基于 Rust actix-web 的高性能核心
 
 ---
 
